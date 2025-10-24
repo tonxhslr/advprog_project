@@ -2,7 +2,7 @@
 
 ## Options Calculator
 
-Goal of this project is to implement a fully-functioning, interactive Option Calculator, that for a given input combination of an Underlying Asset, a strike price and some more information, will return/display the current option price, as well as all the relevant greeks ($\delta, \gamma, \rho, \theta$, etc.).
+Goal of this project is to implement a fully-functioning, interactive Option Calculator, that for a given input combination of an Underlying Asset, a strike price and some more information, will return/display the current option price, as well as all the relevant greeks ($\delta, \gamma, \rho, \theta, \nu$).
 
 Although the Calculator need not be in an interactive environment, it should in theory have all the capabilities of the one, one can find here: https://www.cboe.com/education/tools/options-calculator/
 
