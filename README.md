@@ -28,7 +28,7 @@ In Monte-Carlo, the number of simulations, as well as the time step should be pa
 | Dividend amount   | float (in $)      | -                 |
 | Day interval (for dividend stream)| int | -               |
 | Nr. of simulations (MC) | int         | -                 |
-| Time-Step (MC)    | float (in days?)  | -                 |
+| Nr. of timesteps (MC)   | int         | -                 |
 
 
 
