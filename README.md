@@ -96,10 +96,67 @@ Generally, the Greeks represent the rates of change in the option price with res
 | Vega ($\nu$) | sensitivity to changes in (implied) volatility |
 
 
+### 0.5) Input-File Formats
 
-### *0.5) Notes*
+Maybe the program might ask, whether a finished input-file exists, or if the user wants to create one by parsing through the relevant information. 
+
+**File-Format: .csv**
+<pre>
+option_type = , 
+exercise_type = , 
+start_date = , 
+start_time = ,
+expiration_date = , 
+expiration_time = , 
+k_0 = , 
+s_0 = , 
+iv = , 
+r = , 
+dividend_type = , 
+dividend_amount = , 
+day_interval = ,  
+nr_simulations = , 
+nr_timesteps = , 
+output_to_file = , 
+filename = 
+</pre>
+
+
+
+**File-Format: .json**
+<pre>
+{ 
+"option": {                   
+    "option_type": "",          
+    "exercise_type": "",        
+    "k_0": 0.0,                 
+    "s_0": 0.0,                 
+    "iv": 0.0                   
+  },
+  "time": {
+    "start_date": "",           
+    "start_time": "",           
+    "expiration_date": "",      
+    "expiration_time": ""       
+  },
+  "market": {
+    "r": 0.0,                   
+    "dividend_type": "",        
+    "dividend_amount": 0.0      
+  },
+  "simulation": {
+    "day_interval": 1,          
+    "nr_timesteps": 100,        
+    "nr_simulations": 10000,    
+    "output_to_file": false,    
+    "filename": ""              
+  }
+}
+</pre>
+
+
+
+### *0.6) Notes*
 
 - For Black-Scholes, time until expiration is given in years (i.e. days/365). Opinions differ whether to use Calendar Days (i.e. days/365), or Trading Days (i.e. days/252), since options can only be traded on the latter. A common approach is to annualize each metric based on what makes the most sense logically. I.e. interest rates, which accumulate each calendar day, take the 365-day year, while volatility takes the 252-day year, since assets cannot move (i.e. be volatile) on non-trading days. A common approach is: $T = \frac{days}{365}, \quad \sigma_{d} = \frac{\sigma_a}{252}, \quad r_d = \frac{r_a}{365}$
 - TBD
-
-
