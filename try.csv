@@ -1,0 +1,17 @@
+option_type,call
+exercise_type,european
+start_date,2025-10-25
+start_time,09:30
+expiration_date,2026-01-25
+expiration_time,PM
+option_strike,100
+underlying_price,100
+volatility,20
+interest_rate,5
+dividends,dividend
+dividend_amount,0.0
+day_interval,0
+nr_simulations,10000
+time_step,1.0
+output_to_file,True
+output_filename,results.csv
