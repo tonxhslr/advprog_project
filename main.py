@@ -169,6 +169,14 @@ def transform_input(file):
     else: 
         raise ValueError("Please enter an option for Output To File")
     
+    if config["option_type"].lower() == "barrier":
+        params["barrier_type"] = config["barrier_type"]
+        params["threshold"] = config["threshold"]
+    
+    if config["option_type"].lower() == "binary":
+        params["threshold"] = config["threshold"]
+        params["binary_payout"] = config["binary_payout"]
+    
     return params
 
 # Testrun
