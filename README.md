@@ -27,8 +27,13 @@ In Monte-Carlo, the number of simulations, as well as the time step should be pa
 | Dividends (optional) | string         | ['dividend', 'dividend stream']|
 | Dividend amount   | float (in $)      | -                 |
 | Day interval (for dividend stream)| int | -               |
+| Knock-In / Knock-Out (for Barrier) | string | ['Knock-In', 'Knock-Out'] |
+| Threshold (for Binary & Barrier) | float | -              |
+| Payout (Binary)   | float             |                   |
 | Nr. of simulations (MC) | int         | -                 |
-| Nr. of timesteps (MC)   | int         | -                 |
+| Time-Step (MC)    | float (in days?)  | -                 |
+| Output to File?   | Boolean           | [True, False]     |
+| Output Filename   | string            | "...".csv         |
 
 
 
@@ -114,7 +119,10 @@ iv = ,
 r = , 
 dividend_type = , 
 dividend_amount = , 
-day_interval = ,  
+day_interval = , 
+barrier_type = ,
+threshold = ,
+binary_payout = , 
 nr_simulations = , 
 nr_timesteps = , 
 output_to_file = , 
@@ -131,7 +139,10 @@ filename =
     "exercise_type": "",        
     "k_0": 0.0,                 
     "s_0": 0.0,                 
-    "iv": 0.0                   
+    "iv": 0.0,
+    "barrier_type": "",
+    "threshold": 0.0,
+    "binary_payout": 0.0               
   },
   "time": {
     "start_date": "",           
