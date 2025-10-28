@@ -1,1 +1,25 @@
+#Black_scholes file
+def black_scholes(S_0, K, T, r, sigma, option_type='call', q=0.0):
+    option_type = option_type.lower()
+    if T <= 0 or sigma <= 0:
+        # intrinsic value discounted appropriately (degenerate cases)
+        disc_r = np.exp(-r * max(T, 0.0))
+        disc_q = np.exp(-q * max(T, 0.0))
+        if option_type == 'call':
+            return max(S_0*disc_q - K*disc_r, 0.0)
+        elif option_type == 'put':
+            return max(K*disc_r - S_0*disc_q, 0.0)
+        else:
+            raise ValueError('Option type must be "call" or "put"')
 
+    d1 = (np.log(S_0 / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
+    disc_r = np.exp(-r * T)
+    disc_q = np.exp(-q * T)
+
+    if option_type == 'call':
+        return S_0 * disc_q * norm.cdf(d1) - K * disc_r * norm.cdf(d2)
+    elif option_type == 'put':
+        return K * disc_r * norm.cdf(-d2) - S_0 * disc_q * norm.cdf(-d1)
+    else:
+        raise ValueError('Option type must be "call" or "put"')
