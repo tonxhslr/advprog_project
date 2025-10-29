@@ -44,29 +44,29 @@ def black_scholes(S_0, K, T, r, sigma, option_type = 'call'):
         raise ValueError('Option type must be "call" or "put"')
 
 # Monte-Carlo Simulation
-def timestep(start_price, r, q, sigma, delta_t):
+def timestep(s_0, r, q, sigma, delta_t):
     '''
     Simulates one timestep in the Monte-Carlo simulation. Takes a given start_price at the beginning of the timestep 
     and transforms it into a random price (acc. to GBM) after the timestep.
     '''
-    return start_price * np.exp((r-q-0.5*sigma**2)*delta_t + sigma * np.sqrt(delta_t)*np.random.normal(0,1))
+    return s_0 * np.exp((r-q-0.5*sigma**2)*delta_t + sigma * np.sqrt(delta_t)*np.random.normal(0,1))
 
 
-def simulation_run(timesteps, start_price, expiration, r, q, sigma):
+def simulation_run(nr_of_timesteps, s_0, expiration, r, q, sigma):
     '''
     One full pricing simulation for n timesteps. Takes a given start_price as well as the number of timesteps, and simulates
     an asset's random price development (acc. to GBM) over the n timesteps. Returns an array of the format: [[timestep, price]]
     '''
-    prices = [[0, start_price]]
-    delta_t = expiration/timesteps
-    S_i = start_price
-    for i in range(timesteps):
+    prices = [[0, s_0]]
+    delta_t = expiration/nr_of_timesteps
+    S_i = s_0
+    for i in range(nr_of_timesteps):
         S_i = timestep(S_i, r, q, sigma, delta_t)
         prices.append([i+1, S_i])
     return prices
 
 
-def MonteCarlo(simulations, timesteps, start_price, expiration, r, q, sigma):
+def MonteCarlo(nr_of_simulations, nr_of_timesteps, s_0, expiration, r, q, sigma):
     '''
     Monte-Carlo simulation for an Asset's price development, given a start_price, the assets volatility, current interest rate, dividend yield, expiration
     the number of timesteps per simulation and the total number of simulations. Simulates M different price developments with n timesteps each. 
@@ -74,7 +74,7 @@ def MonteCarlo(simulations, timesteps, start_price, expiration, r, q, sigma):
     '''
     list_of_prices = []
     for _ in range(simulations):
-        list_of_prices.append(simulation_run(timesteps, start_price, expiration, r, q, sigma))
+        list_of_prices.append(simulation_run(nr_of_timesteps, s_0, expiration, r, q, sigma))
     return list_of_prices
 
 
@@ -188,24 +188,23 @@ def transform_input(file):
 
 def mc_pricing_basic(option_function, params):
     paths=MonteCarlo(params)
-    T=calculate_expiration(params["start_date"], params["start_time"], params["expiration_date"], params["expiration_time"])
-    payoffs = [option_function(path=path, T=T, params) for path in paths]
+    payoffs = [option_function(path, params) for path in paths]
 
     mean_payoff = np.mean(payoffs)
     std_error = np.std(payoffs, ddof=1) / math.sqrt(len(payoffs))
     price = math.exp(-params["r"] * params["expiration"]) * mean_payoff
     return price, std_error
 
-def payoff_euro(path, option_type, k_0):
+def payoff_european(path, params):
     ST = path[-1][1]
-    if option_type == "call": 
-        return max(ST - k_0, 0.0)
+    if params["option_type"] == "call": 
+        return max(ST - params["k_0"], 0.0)
     else:                       
-        return max(k_0 - ST, 0.0)
+        return max(params["k_0"] - ST, 0.0)
 
 # Testrun
 filename_csv = os.path.join(os.getcwd(),'try.csv')
 config = read_input_file(filename_csv)
 # print(calculate_expiration("2025-10-25", "09:30", "2026-01-25", "PM"))
 params = transform_input(filename_csv)
-print(mc_pricing_basic(option_function=payoff_euro, params=params))
+print(mc_pricing_basic(option_function=payoff_european, params=params))
