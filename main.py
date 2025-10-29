@@ -189,7 +189,7 @@ def transform_input(file):
 def mc_pricing_basic(option_function, params):
     paths=MonteCarlo(params)
     T=calculate_expiration(params["start_date"], params["start_time"], params["expiration_date"], params["expiration_time"])
-    payoffs = [option_function(path, T=T, params) for path in paths]
+    payoffs = [option_function(path=path, T=T, params) for path in paths]
 
     mean_payoff = np.mean(payoffs)
     std_error = np.std(payoffs, ddof=1) / math.sqrt(len(payoffs))
@@ -204,7 +204,8 @@ def payoff_euro(path, option_type, k_0):
         return max(k_0 - ST, 0.0)
 
 # Testrun
-# filename_csv = os.path.join(os.getcwd(),'try.csv')
-# config = read_input_file(filename_csv)
+filename_csv = os.path.join(os.getcwd(),'try.csv')
+config = read_input_file(filename_csv)
 # print(calculate_expiration("2025-10-25", "09:30", "2026-01-25", "PM"))
-# transform_input(filename_csv)
+params = transform_input(filename_csv)
+print(mc_pricing_basic(option_function=payoff_euro, params=params))
