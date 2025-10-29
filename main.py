@@ -20,21 +20,28 @@ def black_scholes(S_0, K, T, r, sigma, option_type = 'call'):
     '''
 
     option_type = option_type.lower()
+    if T <= 0 or sigma <= 0:
+        # intrinsic value discounted appropriately (degenerate cases)
+        disc_r = np.exp(-r * max(T, 0.0))
+        disc_q = np.exp(-q * max(T, 0.0))
+        if option_type == 'call':
+            return max(S_0*disc_q - K*disc_r, 0.0)
+        elif option_type == 'put':
+            return max(K*disc_r - S_0*disc_q, 0.0)
+        else:
+            raise ValueError('Option type must be "call" or "put"')
 
-    # Define Helper Terms
-    d1 = (np.log(S_0 / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
-    d2 = d1 - (sigma * np.sqrt(T))
+    d1 = (np.log(S_0 / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
+    disc_r = np.exp(-r * T)
+    disc_q = np.exp(-q * T)
 
     if option_type == 'call':
-        p = S_0 * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
-
+        return S_0 * disc_q * norm.cdf(d1) - K * disc_r * norm.cdf(d2)
     elif option_type == 'put':
-        p = K * np.exp(-r * T) * norm.cdf(-d2) - S_0 * norm.cdf(-d1)
-
-    else: 
-        raise ValueError('Option type must be "Call" or "Put"')
-
-    return p
+        return K * disc_r * norm.cdf(-d2) - S_0 * disc_q * norm.cdf(-d1)
+    else:
+        raise ValueError('Option type must be "call" or "put"')
 
 # Monte-Carlo Simulation
 def timestep(start_price, r, q, sigma, delta_t):
@@ -178,6 +185,23 @@ def transform_input(file):
         params["binary_payout"] = config["binary_payout"]
     
     return params
+
+def mc_pricing_basic(option_function, params):
+    paths=MonteCarlo(params)
+    T=calculate_expiration(params["start_date"], params["start_time"], params["expiration_date"], params["expiration_time"])
+    payoffs = [option_function(path, T=T, params) for path in paths]
+
+    mean_payoff = np.mean(payoffs)
+    std_error = np.std(payoffs, ddof=1) / math.sqrt(len(payoffs))
+    price = math.exp(-params["r"] * params["expiration"]) * mean_payoff
+    return price, std_error
+
+def payoff_euro(path, option_type, k_0):
+    ST = path[-1][1]
+    if option_type == "call": 
+        return max(ST - k_0, 0.0)
+    else:                       
+        return max(k_0 - ST, 0.0)
 
 # Testrun
 # filename_csv = os.path.join(os.getcwd(),'try.csv')
