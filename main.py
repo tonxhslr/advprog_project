@@ -148,12 +148,18 @@ def black_scholes(S_0, K, T, r, q, sigma, option_type = 'call'):
         raise ValueError('Option type must be "call" or "put"')
 
 # Monte-Carlo Simulation
+
+'''
+The functions below take the full 'params' dictionary as input. This design keeps a consistent interface across all pricing and payoff methods,
+making it easier to combine, extend, and reuse different pricing approache without changing function signatures.
+'''
+
 def timestep(params):
     '''
     Simulates one timestep in the Monte-Carlo simulation. Takes a given start_price at the beginning of the timestep 
     and transforms it into a random price (acc. to GBM) after the timestep.
     '''
-    detla_t=params["expiration"]/params["nr_of_timesteps"]
+    delta_t=params["expiration"]/params["nr_of_timesteps"]
     return params["s_0"] * np.exp((params["r"]-params["q"]-0.5*params["iv"]**2)*delta_t + params["sigma"] * np.sqrt(delta_t)*np.random.normal(0,1))
 
 
@@ -181,6 +187,13 @@ def MonteCarlo(params):
         list_of_prices.append(simulation_run(params))
     return list_of_prices
 
+"""
+The payoff functions return a payoff given a single simulated price path.
+They all take two arguments:
+  - path: a list of [timestep, price] pairs from a Monte Carlo simulation
+  - params: a dictionary containing option and model parameters
+Each function implements a specific option type (e.g., European, Asian, Binary, Barrier).
+"""
 
 def payoff_european(path, params):
     ST = path[-1][1]
@@ -215,13 +228,19 @@ def payoff_barrier(path, params):
 
 
 def mc_pricing_basic(params):
+"""
+Monte Carlo pricing function.
+
+Generates simulated price paths, computes payoffs using the appropriate payoff function, and returns the discounted mean 
+as the theoretical option price. Uses the full 'params' dictionary for a consistent interface across pricing methods.
+"""
     paths=MonteCarlo(params)
 
     payoff_functions = {
-        "european" : "payoff_european",
-        "binary" : "payoff_binary",
-        "asian" : "payoff_asian
-        "barrier" : "payoff_barrier"}
+        "european" : payoff_european,
+        "binary" : payoff_binary,
+        "asian" : payoff_asian,
+        "barrier" : payoff_barrier}
     
     option_function=payoff_functions[params["exercise_type"]]
     payoffs = [option_function(path, params) for path in paths]
