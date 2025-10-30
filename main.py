@@ -10,78 +10,6 @@ import csv
 import os
 from datetime import date, datetime, timedelta
 
-# Analytical Solution for European Option Price (Black-Scholes)
-def black_scholes(S_0, K, T, r, sigma, option_type = 'call'):
-    '''
-    Analytical Solution for the Price of European Options.
-    Takes as inputs, the current price of the underlying, the strike price of the option, expiration, 
-    interest rate r, implied volatility (sigma), and the option type (call/put), and returns the "fair"
-    option price. 
-    '''
-
-    option_type = option_type.lower()
-    if T <= 0 or sigma <= 0:
-        # intrinsic value discounted appropriately (degenerate cases)
-        disc_r = np.exp(-r * max(T, 0.0))
-        disc_q = np.exp(-q * max(T, 0.0))
-        if option_type == 'call':
-            return max(S_0*disc_q - K*disc_r, 0.0)
-        elif option_type == 'put':
-            return max(K*disc_r - S_0*disc_q, 0.0)
-        else:
-            raise ValueError('Option type must be "call" or "put"')
-
-    d1 = (np.log(S_0 / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
-    d2 = d1 - sigma * np.sqrt(T)
-    disc_r = np.exp(-r * T)
-    disc_q = np.exp(-q * T)
-
-    if option_type == 'call':
-        return S_0 * disc_q * norm.cdf(d1) - K * disc_r * norm.cdf(d2)
-    elif option_type == 'put':
-        return K * disc_r * norm.cdf(-d2) - S_0 * disc_q * norm.cdf(-d1)
-    else:
-        raise ValueError('Option type must be "call" or "put"')
-
-# Monte-Carlo Simulation
-def timestep(s_0, r, q, sigma, delta_t):
-    '''
-    Simulates one timestep in the Monte-Carlo simulation. Takes a given start_price at the beginning of the timestep 
-    and transforms it into a random price (acc. to GBM) after the timestep.
-    '''
-    return s_0 * np.exp((r-q-0.5*sigma**2)*delta_t + sigma * np.sqrt(delta_t)*np.random.normal(0,1))
-
-
-def simulation_run(nr_of_timesteps, s_0, expiration, r, q, sigma):
-    '''
-    One full pricing simulation for n timesteps. Takes a given start_price as well as the number of timesteps, and simulates
-    an asset's random price development (acc. to GBM) over the n timesteps. Returns an array of the format: [[timestep, price]]
-    '''
-    prices = [[0, s_0]]
-    delta_t = expiration/nr_of_timesteps
-    S_i = s_0
-    for i in range(nr_of_timesteps):
-        S_i = timestep(S_i, r, q, sigma, delta_t)
-        prices.append([i+1, S_i])
-    return prices
-
-
-def MonteCarlo(nr_of_simulations, nr_of_timesteps, s_0, expiration, r, q, sigma):
-    '''
-    Monte-Carlo simulation for an Asset's price development, given a start_price, the assets volatility, current interest rate, dividend yield, expiration
-    the number of timesteps per simulation and the total number of simulations. Simulates M different price developments with n timesteps each. 
-    Each price development follows a Stochastic Wiener process (i.e. Geometric Brownian Motion).
-    '''
-    list_of_prices = []
-    for _ in range(simulations):
-        list_of_prices.append(simulation_run(nr_of_timesteps, s_0, expiration, r, q, sigma))
-    return list_of_prices
-
-
-# Testrun
-# print(MonteCarlo(10, 10, 100, 1/12, 0.04, 0.01, 0.30))
-
-
 # Reading / Transforming Inputs from File
 def read_input_file(filepath):
     """
@@ -186,6 +114,77 @@ def transform_input(file):
     
     return params
 
+# Analytical Solution for European Option Price (Black-Scholes)
+def black_scholes(S_0, K, T, r, q, sigma, option_type = 'call'):
+    '''
+    Analytical Solution for the Price of European Options.
+    Takes as inputs, the current price of the underlying, the strike price of the option, expiration, 
+    interest rate r, implied volatility (sigma), and the option type (call/put), and returns the "fair"
+    option price. 
+    '''
+
+    option_type = option_type.lower()
+    if T <= 0 or sigma <= 0:
+        # intrinsic value discounted appropriately (degenerate cases)
+        disc_r = np.exp(-r * max(T, 0.0))
+        disc_q = np.exp(-q * max(T, 0.0))
+        if option_type == 'call':
+            return max(S_0*disc_q - K*disc_r, 0.0)
+        elif option_type == 'put':
+            return max(K*disc_r - S_0*disc_q, 0.0)
+        else:
+            raise ValueError('Option type must be "call" or "put"')
+
+    d1 = (np.log(S_0 / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
+    disc_r = np.exp(-r * T)
+    disc_q = np.exp(-q * T)
+
+    if option_type == 'call':
+        return S_0 * disc_q * norm.cdf(d1) - K * disc_r * norm.cdf(d2)
+    elif option_type == 'put':
+        return K * disc_r * norm.cdf(-d2) - S_0 * disc_q * norm.cdf(-d1)
+    else:
+        raise ValueError('Option type must be "call" or "put"')
+
+# Monte-Carlo Simulation
+def timestep(params):
+    '''
+    Simulates one timestep in the Monte-Carlo simulation. Takes a given start_price at the beginning of the timestep 
+    and transforms it into a random price (acc. to GBM) after the timestep.
+    '''
+    detla_t=params["expiration"]/params["nr_of_timesteps"]
+    return params["s_0"] * np.exp((params["r"]-params["q"]-0.5*params["iv"]**2)*delta_t + params["sigma"] * np.sqrt(delta_t)*np.random.normal(0,1))
+
+
+def simulation_run(params):
+    '''
+    One full pricing simulation for n timesteps. Takes a given start_price as well as the number of timesteps, and simulates
+    an asset's random price development (acc. to GBM) over the n timesteps. Returns an array of the format: [[timestep, price]]
+    '''
+    prices = [[0, params["s_0"]]]
+    S_i = params["s_0"]
+    for i in range(params["nr_of_timesteps"]):
+        S_i = timestep(params)
+        prices.append([i+1, S_i])
+    return prices
+
+
+def MonteCarlo(params):
+    '''
+    Monte-Carlo simulation for an Asset's price development, given a start_price, the assets volatility, current interest rate, dividend yield, expiration
+    the number of timesteps per simulation and the total number of simulations. Simulates M different price developments with n timesteps each. 
+    Each price development follows a Stochastic Wiener process (i.e. Geometric Brownian Motion).
+    '''
+    list_of_prices = []
+    for _ in range(params["nr_of_simulations"]):
+        list_of_prices.append(simulation_run(params))
+    return list_of_prices
+
+
+# Testrun
+# print(MonteCarlo(10, 10, 100, 1/12, 0.04, 0.01, 0.30))
+
 def mc_pricing_basic(option_function, params):
     paths=MonteCarlo(params)
     payoffs = [option_function(path, params) for path in paths]
@@ -197,11 +196,31 @@ def mc_pricing_basic(option_function, params):
 
 def payoff_european(path, params):
     ST = path[-1][1]
+    strike = params["k_0"]
     if params["option_type"] == "call": 
-        return max(ST - params["k_0"], 0.0)
+        return max(ST - strike, 0.0)
     else:                       
-        return max(params["k_0"] - ST, 0.0)
+        return max(strike - ST, 0.0)
 
+def payoff_binary(path, params):
+    ST = path[-1][1]
+    K  = params["threshold"]
+    Q  = float(params.get("binary_payout", 1.0))
+
+    if params["option_type"] == "call":
+        return Q if ST > K else 0.0
+    else:
+        return Q if ST < K else 0.0
+
+def payoff_asian_arith(path, params):
+    strike = params["k_0"]
+    prices = [S for _, S in path]
+    avg_price = sum(prices) / len(prices)
+
+    if params["option_type"] == "call":
+        return max(avg_price - strike, 0.0)
+    else:
+        return max(strike - avg_price, 0.0)
 # Testrun
 filename_csv = os.path.join(os.getcwd(),'try.csv')
 config = read_input_file(filename_csv)
