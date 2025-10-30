@@ -182,18 +182,6 @@ def MonteCarlo(params):
     return list_of_prices
 
 
-# Testrun
-# print(MonteCarlo(10, 10, 100, 1/12, 0.04, 0.01, 0.30))
-
-def mc_pricing_basic(option_function, params):
-    paths=MonteCarlo(params)
-    payoffs = [option_function(path, params) for path in paths]
-
-    mean_payoff = np.mean(payoffs)
-    std_error = np.std(payoffs, ddof=1) / math.sqrt(len(payoffs))
-    price = math.exp(-params["r"] * params["expiration"]) * mean_payoff
-    return price, std_error
-
 def payoff_european(path, params):
     ST = path[-1][1]
     strike = params["k_0"]
@@ -212,7 +200,7 @@ def payoff_binary(path, params):
     else:
         return Q if ST < K else 0.0
 
-def payoff_asian_arith(path, params):
+def payoff_asian(path, params):
     strike = params["k_0"]
     prices = [S for _, S in path]
     avg_price = sum(prices) / len(prices)
@@ -221,6 +209,28 @@ def payoff_asian_arith(path, params):
         return max(avg_price - strike, 0.0)
     else:
         return max(strike - avg_price, 0.0)
+
+def payoff_barrier(path, params):
+    return tbd
+
+
+def mc_pricing_basic(params):
+    paths=MonteCarlo(params)
+
+    payoff_functions = {
+        "european" : "payoff_european",
+        "binary" : "payoff_binary",
+        "asian" : "payoff_asian
+        "barrier" : "payoff_barrier"}
+    
+    option_function=payoff_functions[params["exercise_type"]]
+    payoffs = [option_function(path, params) for path in paths]
+
+    mean_payoff = np.mean(payoffs)
+    price = math.exp(-params["r"] * params["expiration"]) * mean_payoff
+    return price
+
+
 # Testrun
 filename_csv = os.path.join(os.getcwd(),'try.csv')
 config = read_input_file(filename_csv)
