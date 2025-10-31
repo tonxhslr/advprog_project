@@ -115,7 +115,7 @@ def transform_input(file):
     return params
 
 # Analytical Solution for European Option Price (Black-Scholes)
-def black_scholes(S_0, K, T, r, q, sigma, option_type = 'call'):
+def black_scholes(S_0, K, T, r, q, sigma, option_type='call', option_style='european', payout=1.0):
     '''
     Analytical Solution for the Price of European Options.
     Takes as inputs, the current price of the underlying, the strike price of the option, expiration, 
@@ -124,28 +124,40 @@ def black_scholes(S_0, K, T, r, q, sigma, option_type = 'call'):
     '''
 
     option_type = option_type.lower()
+    option_style = option_style.lower()
+
     if T <= 0 or sigma <= 0:
-        # intrinsic value discounted appropriately (degenerate cases)
         disc_r = np.exp(-r * max(T, 0.0))
         disc_q = np.exp(-q * max(T, 0.0))
-        if option_type == 'call':
-            return max(S_0*disc_q - K*disc_r, 0.0)
-        elif option_type == 'put':
-            return max(K*disc_r - S_0*disc_q, 0.0)
-        else:
-            raise ValueError('Option type must be "call" or "put"')
+        itm = (S_0 >= K) if option_type == 'call' else (S_0 <= K)
+
+        if option_style == 'binary':
+            return payout * disc_r if itm else 0.0
+        else:  # european
+            if option_type == 'call':
+                return max(S_0 * disc_q - K * disc_r, 0.0)
+            else:
+                return max(K * disc_r - S_0 * disc_q, 0.0)
 
     d1 = (np.log(S_0 / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)
     disc_r = np.exp(-r * T)
     disc_q = np.exp(-q * T)
 
-    if option_type == 'call':
-        return S_0 * disc_q * norm.cdf(d1) - K * disc_r * norm.cdf(d2)
-    elif option_type == 'put':
-        return K * disc_r * norm.cdf(-d2) - S_0 * disc_q * norm.cdf(-d1)
+    if option_style == 'european':
+        if option_type == 'call':
+            return S_0 * disc_q * norm.cdf(d1) - K * disc_r * norm.cdf(d2)
+        elif option_type == 'put':
+            return K * disc_r * norm.cdf(-d2) - S_0 * disc_q * norm.cdf(-d1)
+
+    elif option_style == 'binary':
+        if option_type == 'call':
+            return payout * disc_r * norm.cdf(d2)
+        elif option_type == 'put':
+            return payout * disc_r * norm.cdf(-d2)
+
     else:
-        raise ValueError('Option type must be "call" or "put"')
+        raise ValueError("option_style must be 'european' or 'binary'")
 
 # Monte-Carlo Simulation
 
