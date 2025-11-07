@@ -1,3 +1,5 @@
+# Module-level constant for year days (consistent with calculate_expiration)
+YEAR_DAYS_DEFAULT = 365.25  # keep consistent with calculate_expiration
 import numpy as np
 import pandas as pd
 import math
@@ -11,64 +13,92 @@ import os
 from datetime import date, datetime, timedelta
 
 # Analytical Solution for European Option Price (Black-Scholes)
-def black_scholes(S_0, K, T, r, sigma, option_type = 'call'):
+def black_scholes(S_0, K, T, r, sigma, option_type='call', q=0.0):
     '''
-    Analytical Solution for the Price of European Options.
-    Takes as inputs, the current price of the underlying, the strike price of the option, expiration, 
-    interest rate r, implied volatility (sigma), and the option type (call/put), and returns the "fair"
-    option price. 
+    Analytical solution (Black–Scholes–Merton form) for European options with optional
+    continuous dividend yield q (q=0 reduces to the original no-dividend case).
     '''
-
     option_type = option_type.lower()
 
-    # Define Helper Terms
-    d1 = (np.log(S_0 / K) + (r + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
-    d2 = d1 - (sigma * np.sqrt(T))
+    if T <= 0 or sigma <= 0:
+        intrinsic = max(S_0 - K, 0.0) if option_type == 'call' else max(K - S_0, 0.0)
+        return float(intrinsic)
+
+    # Helper terms with dividend yield q
+    d1 = (np.log(S_0 / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
 
     if option_type == 'call':
-        p = S_0 * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
-
+        p = S_0 * np.exp(-q * T) * norm.cdf(d1) - K * np.exp(-r * T) * norm.cdf(d2)
     elif option_type == 'put':
-        p = K * np.exp(-r * T) * norm.cdf(-d2) - S_0 * norm.cdf(-d1)
-
-    else: 
+        p = K * np.exp(-r * T) * norm.cdf(-d2) - S_0 * np.exp(-q * T) * norm.cdf(-d1)
+    else:
         raise ValueError('Option type must be "Call" or "Put"')
 
-    return p
+    return float(p)
 
-# Monte-Carlo Simulation
-def timestep(start_price, r, q, sigma, delta_t):
-    '''
-    Simulates one timestep in the Monte-Carlo simulation. Takes a given start_price at the beginning of the timestep 
-    and transforms it into a random price (acc. to GBM) after the timestep.
-    '''
-    return start_price * np.exp((r-q-0.5*sigma**2)*delta_t + sigma * np.sqrt(delta_t)*np.random.normal(0,1))
+# Monte-Carlo Simulation (supports discrete cash dividends on a fixed day interval)
+
+def timestep_no_yield(start_price, r, sigma, delta_t):
+    """
+    One GBM step under the risk-neutral measure with drift r and NO continuous dividend yield.
+    This is used between discrete, ex-dividend dates.
+    """
+    return start_price * np.exp((r - 0.5 * sigma**2) * delta_t + sigma * np.sqrt(delta_t) * np.random.normal(0, 1))
 
 
-def simulation_run(timesteps, start_price, expiration, r, q, sigma):
-    '''
-    One full pricing simulation for n timesteps. Takes a given start_price as well as the number of timesteps, and simulates
-    an asset's random price development (acc. to GBM) over the n timesteps. Returns an array of the format: [[timestep, price]]
-    '''
+def _dividend_steps(timesteps, T_years, q_interval_days, year_days=YEAR_DAYS_DEFAULT):
+    """
+    Compute the set of step indices (1..timesteps) that coincide with ex-dividend dates,
+    when cash dividends are paid every q_interval_days.
+    """
+    if not q_interval_days or q_interval_days <= 0:
+        return set()
+    dt = T_years / timesteps
+    interval_years = q_interval_days / year_days
+    # dividend times in years (exclude t=0); map to nearest step index
+    div_times = np.arange(interval_years, T_years + 1e-12, interval_years)
+    div_steps = {int(round(t / dt)) for t in div_times}
+    # keep only valid indices within 1..timesteps
+    return {k for k in div_steps if 1 <= k <= timesteps}
+
+
+def simulation_run(timesteps, start_price, expiration, r, q, sigma, q_interval_days=0, year_days=YEAR_DAYS_DEFAULT):
+    """
+    Simulate one asset path over `timesteps` up to maturity `expiration` (years).
+    Discrete cash dividends of size `q` are paid every `q_interval_days`.
+    Between dividends we use GBM with drift r (no continuous yield); at each ex-div step we drop:
+        S <- max(S - q, 0)
+    Returns: list of [step_index, price].
+    """
     prices = [[0, start_price]]
-    delta_t = expiration/timesteps
-    S_i = start_price
-    for i in range(timesteps):
-        S_i = timestep(S_i, r, q, sigma, delta_t)
-        prices.append([i+1, S_i])
+    T = float(expiration)
+    dt = T / timesteps
+    S = start_price
+
+    div_steps = _dividend_steps(timesteps, T, q_interval_days, year_days)
+
+    for k in range(1, timesteps + 1):
+        # evolve between dividend dates (risk-neutral drift r, no yield)
+        S = timestep_no_yield(S, r, sigma, dt)
+        # apply discrete cash dividend at ex-div date
+        if k in div_steps and q is not None and q != 0:
+            S = max(S - float(q), 0.0)
+        prices.append([k, S])
+
     return prices
 
 
-def MonteCarlo(simulations, timesteps, start_price, expiration, r, q, sigma):
-    '''
-    Monte-Carlo simulation for an Asset's price development, given a start_price, the assets volatility, current interest rate, dividend yield, expiration
-    the number of timesteps per simulation and the total number of simulations. Simulates M different price developments with n timesteps each. 
-    Each price development follows a Stochastic Wiener process (i.e. Geometric Brownian Motion).
-    '''
-    list_of_prices = []
-    for _ in range(simulations):
-        list_of_prices.append(simulation_run(timesteps, start_price, expiration, r, q, sigma))
-    return list_of_prices
+def MonteCarlo(simulations, timesteps, start_price, expiration, r, q, sigma, q_interval_days=0, year_days=YEAR_DAYS_DEFAULT):
+    """
+    Monte Carlo simulation of `simulations` paths, each with `timesteps` steps.
+    If `q_interval_days` > 0, treats `q` as a CASH dividend amount paid every `q_interval_days` days.
+    If `q_interval_days` == 0, no discrete cash dividends are applied.
+    """
+    return [
+        simulation_run(timesteps, start_price, expiration, r, q, sigma, q_interval_days=q_interval_days, year_days=year_days)
+        for _ in range(simulations)
+    ]
 
 
 # Testrun
@@ -153,15 +183,15 @@ def transform_input(file):
         params["q"] = 0
         params["q_interval"] = 0
     elif config["dividends"].lower() == "dividend":
-        params["q"] = float(config["dividend_amount"])
+        params["q"] = float(config["dividend_amount"])/float(config["underlying_price"]) # Because we want dividend to be a yield (if it's not a dividend stream)
         params["q_interval"] = 0
     elif config["dividends"].lower() == "dividend_stream":
         params["q"] = float(config["dividend_amount"])
         params["q_interval"] = float(config["day_interval"])
     else:
         raise ValueError("Please enter Dividend")
-    params["nr_of_simulations"] = float(config["nr_simulations"])
-    params["nr_of_timesteps"] = float(config["time_step"])
+    params["nr_of_simulations"] = int(config["nr_simulations"])
+    params["nr_of_timesteps"] = int(config["nr_of_timesteps"])
     if bool(config["output_to_file"]) == False: 
         params["filename"] = None
     elif bool(config["output_to_file"]) == True: 
@@ -169,18 +199,45 @@ def transform_input(file):
     else: 
         raise ValueError("Please enter an option for Output To File")
     
-    if config["option_type"].lower() == "barrier":
+    if config["exercise_type"].lower() == "barrier":
         params["barrier_type"] = config["barrier_type"]
         params["threshold"] = config["threshold"]
     
-    if config["option_type"].lower() == "binary":
+    if config["exercise_type"].lower() == "binary":
         params["threshold"] = config["threshold"]
         params["binary_payout"] = config["binary_payout"]
     
     return params
 
-# Testrun
-# filename_csv = os.path.join(os.getcwd(),'try.csv')
-# config = read_input_file(filename_csv)
-# print(calculate_expiration("2025-10-25", "09:30", "2026-01-25", "PM"))
-# transform_input(filename_csv)
+
+def price_european(option_type, expiration, s_0, k_0, iv, r, q, q_interval, nr_of_simulations, nr_of_timesteps):
+    '''
+    Prices a European option under two regimes:
+      1) If dividends are paid on a fixed day interval (q_interval > 0): use Monte Carlo.
+      2) If no dividends (q == 0) or dividends are modeled as a continuous yield (q_interval == 0): use analytical Black–Scholes with dividend yield q.
+    Returns: option price (float).
+    '''
+    opt = option_type.lower()
+    if opt not in ("call", "put"):
+        raise ValueError("Option Type needs to be either Put or Call")
+
+    T = float(expiration)
+    sigma = float(iv)
+
+    # Case 1: discrete periodic dividends -> Monte Carlo
+    if q_interval and float(q_interval) > 0:
+        paths = MonteCarlo(nr_of_simulations, nr_of_timesteps, s_0, T, r, q, sigma, q_interval_days=q_interval, year_days=YEAR_DAYS_DEFAULT)
+        # each path is [[step, price], ...]; take the terminal price element [ -1 ][1]
+        final_prices = [path[-1][1] for path in paths]
+        if opt == "call":
+            payoffs = np.maximum(np.array(final_prices) - k_0, 0.0)
+        else:
+            payoffs = np.maximum(k_0 - np.array(final_prices), 0.0)
+        return float(np.exp(-r * T) * payoffs.mean())
+
+    # Case 2: no dividends or continuous dividend yield -> analytical
+    return black_scholes(s_0, k_0, T, r, sigma, opt, q=float(q))
+
+
+def price_american(option_type, expiration, s_0, k_0, iv, r, q, q_interval, nr_of_simulations, nr_of_timesteps):
+    pass
