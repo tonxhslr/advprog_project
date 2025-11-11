@@ -114,7 +114,7 @@ def transform_input(file):
     
     return params
 
-# Analytical Solution for European Option Price (Black-Scholes)
+# Analytical Solution for European, Binary Option Price (Black-Scholes)
 def black_scholes(S_0, K, T, r, q, sigma, option_type='call', option_style='european', payout=1.0):
     '''
     Analytical Solution for the Price of European Options.
@@ -158,6 +158,62 @@ def black_scholes(S_0, K, T, r, q, sigma, option_type='call', option_style='euro
 
     else:
         raise ValueError("option_style must be 'european' or 'binary'")
+        
+# Analytical Solution for European, Binary Option Price (Black-Scholes) (INCLUDE AMERICAN OPTIONS WITH DIVIDEND YIELDS)
+def black_scholes(S_0, K, T, r, q, sigma, option_type='call', option_style='european', payout=1.0):
+    """
+    Analytical Solution for:
+      - European call/put (with dividend yield q)
+      - Binary cash-or-nothing call/put
+    Accepts 'american' in option_style, but returns the European value because
+    American options with dividends do not have a closed-form Black–Scholes price.
+    """
+    
+    option_type = option_type.lower()
+    option_style = option_style.lower()
+
+    if T <= 0 or sigma <= 0:
+        disc_r = np.exp(-r * max(T, 0.0))
+        disc_q = np.exp(-q * max(T, 0.0))
+        itm = (S_0 >= K) if option_type == 'call' else (S_0 <= K)
+
+        if option_style == 'binary':
+            return payout * disc_r if itm else 0.0
+        else:  # european / american fallback
+            if option_type == 'call':
+                return max(S_0 * disc_q - K * disc_r, 0.0)
+            else:
+                return max(K * disc_r - S_0 * disc_q, 0.0)
+
+    d1 = (np.log(S_0 / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
+    disc_r = np.exp(-r * T)
+    disc_q = np.exp(-q * T)
+
+    if option_style == 'european':
+        if option_type == 'call':
+            return S_0 * disc_q * norm.cdf(d1) - K * disc_r * norm.cdf(d2)
+        elif option_type == 'put':
+            return K * disc_r * norm.cdf(-d2) - S_0 * disc_q * norm.cdf(-d1)
+
+    elif option_style == 'binary':
+        if option_type == 'call':
+            return payout * disc_r * norm.cdf(d2)
+        elif option_type == 'put':
+            return payout * disc_r * norm.cdf(-d2)
+
+    elif option_style == 'american':
+        # price it as european here; true american (esp. with dividends)
+        # should be done with a binomial / LSM outside this function
+        if option_type == 'call':
+            euro_price = S_0 * disc_q * norm.cdf(d1) - K * disc_r * norm.cdf(d2)
+            return euro_price
+        else:  # put
+            euro_price = K * disc_r * norm.cdf(-d2) - S_0 * disc_q * norm.cdf(-d1)
+            return euro_price
+
+    else:
+        raise ValueError("option_style must be 'european', 'binary', or 'american'")
 
 # Monte-Carlo Simulation
 
