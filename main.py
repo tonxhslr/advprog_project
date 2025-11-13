@@ -95,8 +95,8 @@ def transform_input(file):
         params["q_interval"] = float(config["day_interval"])
     else:
         raise ValueError("Please enter Dividend")
-    params["nr_of_simulations"] = float(config["nr_simulations"])
-    params["nr_of_timesteps"] = float(config["time_step"])
+    params["nr_of_simulations"] = int(config["nr_simulations"])
+    params["nr_of_timesteps"] = int(config["time_step"])
     if bool(config["output_to_file"]) == False: 
         params["filename"] = None
     elif bool(config["output_to_file"]) == True: 
@@ -292,7 +292,22 @@ def payoff_asian(path, params):
         return max(strike - avg_price, 0.0)
 
 def payoff_barrier(path, params):
-    return tbd
+    #I'm not too sure if this one is correct
+    
+    ST = path[-1][1]
+    strike = params["k_0"]
+    K  = params["threshold"]
+    prices = [S for _, S in path]
+    if params["option_type"] == "call":
+        if "in" in params["barrier_type"]:
+            return max(ST - strike, 0.0) if any(S >= K for S in prices) else 0.0
+        elif "out" in params["barrier_type"]:
+            return 0.0 if any(S <= K for S in prices) else max(ST - strike, 0.0)
+    else:
+        if "in" in params["barrier_type"]:
+            return max(strike - ST, 0.0) if any(S <= K for S in prices) else 0.0
+        elif "out" in params["barrier_type"]:
+            return 0.0 if any(S >= K for S in prices) else max(strike - ST, 0.0)
 
 
 def mc_pricing_basic(params):
