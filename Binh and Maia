@@ -1,0 +1,30 @@
+def bs_d1_d2(S_0, K, T, r, q, sigma):
+  """ Compute Black-Scholes d1 and d2."""
+  if T <= 0 or sigma <= 0 or S_0 <= 0 or K <= 0:
+    return np.nan, np.nan
+  d1 = (np.log(S_0 / K) + (r - q + 0.5 * sigma * sigma) * T) / (sigma * np.sqrt(T))
+  d2 = d1 - sigma * np.sqrt(T)
+  return d1, d2
+
+def bs_greeks(option_type, S_0, K, T, r, q, sigma):
+  opt = option_type.lower()
+  if opt not in ("call", "put"):
+    raise ValueError("option_type must be 'call' or 'put'")
+  d1, d2 = bs_d1_d2(S_0, K, T, r, q, sigma)
+  Nd1 = norm.cdf(d1)
+  Nd2 = norm.cdf(d2)
+  nd1 = norm.pdf(d1)
+
+  disc_q = np.exp(-q * T)
+  disc_r = np.exp(-r * T)
+
+  if opt == "call":
+    delta = disc_q * Nd1
+    rho = K * T * disc_r * Nd2
+  else:
+    delta = disc_q * (Nd1 - 1.0)
+    rho = -K * T * disc_r * norm.cdf(-d2)
+
+  gamma = disc_q * nd1 / (S_0 * sigma * np.sqrt(T))
+
+  return float(delta), float(gamma), float(rho)
