@@ -28,3 +28,16 @@ def bs_greeks(option_type, S_0, K, T, r, q, sigma):
   gamma = disc_q * nd1 / (S_0 * sigma * np.sqrt(T))
 
   return float(delta), float(gamma), float(rho)
+
+    vega = S_0 * np.exp(-q * T) * nd1 * np.sqrt(T)
+
+    term1 = -(S_0 * np.exp(-q * T) * nd1 * sigma) / (2 * np.sqrt(T))
+    if opt == "call":
+        term2 = q * S_0 * np.exp(-q * T) * Nd1
+        term3 = r * K * np.exp(-r * T) * Nd2
+        theta = term1 - term2 - term3
+    else:
+        term2 = q * S_0 * np.exp(-q * T) * norm.cdf(-d1)
+        term3 = r * K * np.exp(-r * T) * norm.cdf(-d2)
+        theta = term1 + term2 + term3
+    return float(vega), float(theta)
