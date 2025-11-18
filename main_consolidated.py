@@ -113,32 +113,50 @@ def transform_input(file):
     except (ValueError, TypeError):
         raise ValueError("Interest rate has to be of type 'float' (x.x%)!")
     
-    if config["dividends"] == "None" or config["dividends"] is False:
+    if config["dividend"] == "None" or config["dividends"] is False:
         params["q"] = 0
-        params["q_interval"] = 0
-    elif config["dividends"].lower() == "dividend":
-        params["q"] = float(config["dividend_amount"])
-        params["q_interval"] = 0
-    elif config["dividends"].lower() == "dividend_stream":
-        params["q"] = float(config["dividend_amount"])
-        params["q_interval"] = float(config["day_interval"])
-    else:
-        raise ValueError("Please enter Dividend")
-    params["nr_of_simulations"] = float(config["nr_simulations"])
-    params["nr_of_timesteps"] = float(config["time_step"])
+    else: 
+        try: 
+            params["q"] = float(config["dividend"])
+        except (ValueError, TypeError):
+            raise ValueError("Dividend has to be of type 'float'!")
+
+    try: 
+        params["nr_of_simulations"] = int(config["nr_simulations"])
+    except (ValueError, TypeError):
+        raise ValueError("Number of simulations has to be of type 'int'!")
+
+    try: 
+        params["nr_of_timesteps"] = int(config["time_step"])
+    except (ValueError, TypeError):
+        raise ValueError("Number of timesteps has to be of type 'int'!")
+    
     if bool(config["output_to_file"]) == False: 
         params["filename"] = None
     elif bool(config["output_to_file"]) == True: 
         params["filename"] = config["output_filename"]
     else: 
         raise ValueError("Please enter an option for Output To File")
+
+    # Currently, the program will overwrite files, but one could implement a check for existing files and prompt the user, whether he wants to overwrite the file
     
     if config["option_type"].lower() == "barrier":
         params["barrier_type"] = config["barrier_type"]
-        params["threshold"] = config["threshold"]
-    
+        if not any(word in params["barrier_type"].lower() for word in ("in", "out")):
+            raise ValueError("Barrier type must contain 'in' or 'out' (e.g. 'knock-in', 'knockout')!")   
+        try: 
+            params["threshold"] = float(config["threshold"])
+        except (ValueError, TypeError): 
+            raise ValueError("Barrier threshold has to be type 'float'!")
+
     if config["option_type"].lower() == "binary":
-        params["threshold"] = config["threshold"]
-        params["binary_payout"] = config["binary_payout"]
+        try: 
+            params["threshold"] = float(config["threshold"])
+        except (ValueError, TypeError): 
+            raise ValueError("Binary threshold has to be type 'float'!")
+        try:
+            params["binary_payout"] = float(config["binary_payout"])
+        except (ValueError, TypeError):
+            raise ValueError("Binary payout has to be type 'float'!")
     
     return params
