@@ -473,15 +473,15 @@ def bs_greeks(params):
     if T <= 0 or sigma <= 0 or S_0 <= 0 or K <= 0:
         return np.nan, np.nan
 
-    d1 = (np.log(S_0 / K) + (r - q + 0.5 * sigma * sigma) * T) / (iv * np.sqrt(T))
-    d2 = d1 - iv * np.sqrt(T)
+    d1 = (np.log(S_0 / K) + (r - q + 0.5 * sigma * sigma) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
     Nd1 = norm.cdf(d1)
     Nd2 = norm.cdf(d2)
     nd1 = norm.pdf(d1)
     
-    vega = s_0 * np.exp(-q * T) * nd1 * np.sqrt(T)
+    vega = S_0 * np.exp(-q * T) * nd1 * np.sqrt(T)
     
-    term1 = -(s_0 * np.exp(-q * T) * nd1 * sigma) / (2 * np.sqrt(T))
+    term1 = -(S_0 * np.exp(-q * T) * nd1 * sigma) / (2 * np.sqrt(T))
     
     disc_q = np.exp(-q * T)
     disc_r = np.exp(-r * T)
@@ -489,13 +489,13 @@ def bs_greeks(params):
     if option_type == "call":
         delta = disc_q * Nd1
         rho = K * T * disc_r * Nd2
-        term2 = q * s_0 * np.exp(-q * T) * Nd1
+        term2 = q * S_0 * np.exp(-q * T) * Nd1
         term3 = r * K * np.exp(-r * T) * Nd2
         theta = term1 - term2 - term3
     else:
         delta = disc_q * (Nd1 - 1.0)
         rho = -K * T * disc_r * norm.cdf(-d2)
-        term2 = q * s_0 * np.exp(-q * T) * norm.cdf(-d1)
+        term2 = q * S_0 * np.exp(-q * T) * norm.cdf(-d1)
         term3 = r * K * np.exp(-r * T) * norm.cdf(-d2)
         theta = term1 + term2 + term3
     
