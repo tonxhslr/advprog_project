@@ -509,6 +509,9 @@ def option_calculator(file):
     Final Option Calculator Function
 
     Takes the Input-File and calculates option price both analytically (if possible) as well as numerically, using Monte-Carlo Simulation, and all Greeks.
+    If specified, it writes the calculated values into a file of either '.csv' or '.json' format. 
+    If it shouldn't write the output into a file, it will print the output into the terminal. 
+    
     Returns: Dictionary with all calculated values
     '''
     
