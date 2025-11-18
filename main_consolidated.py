@@ -163,7 +163,7 @@ def transform_input(file):
 
 
 # 2) Black-Scholes: Analytical Solution for European or Binary Option Price, or American options without Dividends (Black-Scholes)
-def black_scholes(S_0, K, T, r, q, sigma, option_type='call', exercise_type='european', payout=1.0):
+def black_scholes(params):
     """
     Analytical Solution for:
       - European call/put (with dividend yield q)
@@ -171,18 +171,16 @@ def black_scholes(S_0, K, T, r, q, sigma, option_type='call', exercise_type='eur
     Accepts 'american' in exercise_type, but returns the European value because
     American options with dividends do not have a closed-form Black–Scholes price.
     """
+    
     S_0 = params["S_0"]
     K = params["K"]
     T = params["T"]
     r = params["r"]
     q = params["q"]
     sigma = params["iv"]
-    option_type = params["option_type"]
-    exercise_type = params["exercise_type"]
-    payout = params["binary_payout"]
-    
-    option_type = option_type.lower()
-    exercise_type = exercise_type.lower()
+    option_type = params.get("option_type", 'call')
+    exercise_type = params.get("exercise_type", 'european')
+    payout = params.get("binary_payout", 1.0)
 
     if T <= 0 or sigma <= 0:
         disc_r = np.exp(-r * max(T, 0.0))
