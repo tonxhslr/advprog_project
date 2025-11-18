@@ -537,19 +537,30 @@ def option_calculator(file):
         "Vega": vega
     }
 
-    output_file = Path(output_file)
-    suffix = filename.suffix.lower()  # ".csv" or ".json"
-    
-    if suffix == ".csv":
-        with open(output_file, "w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(data.keys())
-            writer.writerow(data.values())
-    elif suffix == ".json":
-        with open(output_file, "w") as f:
-            json.dump(data, f, indent=4)
-    else:
-        raise ValueError(f"Unsupported file extension: {suffix}")
+    if output_file:
+        output_file = Path(output_file)
+        suffix = filename.suffix.lower()  # ".csv" or ".json"
+        
+        if suffix == ".csv":
+            with open(output_file, "w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(data.keys())
+                writer.writerow(data.values())
+        elif suffix == ".json":
+            with open(output_file, "w") as f:
+                json.dump(data, f, indent=4)
+        else:
+            raise ValueError(f"Unsupported file extension: {suffix}")
+    else: 
+        print("Option Price (Analytical (BS)):", option_price_analytical)
+        print("Option Price (Numerical (MC)):", option_price_mc)
+        print("Delta:", delta)
+        print("Gamma:", gamma)
+        print("Rho:", rho)
+        print("Theta:", theta)
+        print("Vega:", vega)
+
+    return output
         
         
         
