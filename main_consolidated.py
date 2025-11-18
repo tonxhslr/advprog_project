@@ -135,6 +135,8 @@ def transform_input(file):
         params["filename"] = None
     elif bool(config["output_to_file"]) == True: 
         params["filename"] = config["output_filename"]
+        if Path(params["filename"]).suffix.lower() not in (".csv", ".json"):
+            raise ValueError("File has to be of '.csv' or '.json'-format. Please add the according suffix!")
     else: 
         raise ValueError("Please enter an option for Output To File")
 
@@ -510,6 +512,9 @@ def option_calculator(file):
     params = transform_input(file)
     option_type = params["option_type"]
     output_file = params["filename"]
+
+    option_price_analytical = 0
+    option_price_mc = 0
     
     if option_type == "european" or option_type == "binary" or (option_type == "american" and params["q"] == 0):
         option_price_analytical = black_scholes(params)
@@ -522,7 +527,31 @@ def option_calculator(file):
 
     delta, gamma, rho, theta, vega = bs_greeks(params)
 
+    output = {
+        "Option Price (Analytical (BS))": option_price_analytical,
+        "Option Price (Numerical (MC))": option_price_mc,
+        "Delta": delta,
+        "Gamma": gamma,
+        "Rho": rho, 
+        "Theta": theta,
+        "Vega": vega
+    }
+
+    output_file = Path(output_file)
+    suffix = filename.suffix.lower()  # ".csv" or ".json"
     
-    
+    if suffix == ".csv":
+        with open(output_file, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(data.keys())
+            writer.writerow(data.values())
+    elif suffix == ".json":
+        with open(output_file, "w") as f:
+            json.dump(data, f, indent=4)
+    else:
+        raise ValueError(f"Unsupported file extension: {suffix}")
+        
+        
+        
 
 
