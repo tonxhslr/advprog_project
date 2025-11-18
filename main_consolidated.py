@@ -423,21 +423,21 @@ def payoff_barrier(path, params):
         return 0.0 if hit else european_payoff
 
 def mc_pricing_basic(params):
-"""
-Monte Carlo pricing function.
-
-Generates simulated price paths, computes payoffs using the appropriate payoff function, and returns the discounted mean 
-as the theoretical option price. Uses the full 'params' dictionary for a consistent interface across pricing methods.
-
-Inputs:
- - params: dictionary of parameters, from which the function takes
-     Excercise type (european, asian, etc.) exercise_type: params["exercise_type"]
-     Interest rate r: params["r"]
-     Expiration T: params["expiration"]
-
-     + all the parameters used to calculate paths in MonteCarlo function
-
-"""
+    """
+    Monte Carlo pricing function.
+    
+    Generates simulated price paths, computes payoffs using the appropriate payoff function, and returns the discounted mean 
+    as the theoretical option price. Uses the full 'params' dictionary for a consistent interface across pricing methods.
+    
+    Inputs:
+     - params: dictionary of parameters, from which the function takes
+         Excercise type (european, asian, etc.) exercise_type: params["exercise_type"]
+         Interest rate r: params["r"]
+         Expiration T: params["expiration"]
+    
+         + all the parameters used to calculate paths in MonteCarlo function
+    
+    """
     exercise_type = params["exercise_type"]
     r = params["r"]
     T = params["T"]
