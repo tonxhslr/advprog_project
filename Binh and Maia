@@ -37,4 +37,4 @@ def bs_greeks(option_type, S_0, K, T, r, q, sigma):
 
   gamma = disc_q * nd1 / (S_0 * sigma * np.sqrt(T))
 
-  return float(delta), float(gamma), float(rho), float(vega), float(theta)
+  return float(delta), float(gamma), float(rho), float(theta), float(vega)
