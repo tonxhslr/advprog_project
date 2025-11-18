@@ -506,7 +506,10 @@ def bs_greeks(params):
 
 def option_calculator(file):
     '''
-    TBD
+    Final Option Calculator Function
+
+    Takes the Input-File and calculates option price both analytically (if possible) as well as numerically, using Monte-Carlo Simulation, and all Greeks.
+    Returns: Dictionary with all calculated values
     '''
     
     params = transform_input(file)
