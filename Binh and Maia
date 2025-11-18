@@ -48,13 +48,13 @@ def bs_greeks(params):
   T = params["T"]
   r = params["r"]
   q = params["q"]
-  iv = params["iv"]
+  sigma = params["iv"]
 
   if opt not in ("call", "put"):
     raise ValueError("option_type must be 'call' or 'put'")
-  if T <= 0 or iv <= 0 or S_0 <= 0 or K <= 0:
+  if T <= 0 or sigma <= 0 or S_0 <= 0 or K <= 0:
     return np.nan, np.nan
-  d1 = (np.log(S_0 / K) + (r - q + 0.5 * iv * iv) * T) / (iv * np.sqrt(T))
+  d1 = (np.log(S_0 / K) + (r - q + 0.5 * sigma * sigma) * T) / (iv * np.sqrt(T))
   d2 = d1 - iv * np.sqrt(T)
   Nd1 = norm.cdf(d1)
   Nd2 = norm.cdf(d2)
@@ -62,7 +62,7 @@ def bs_greeks(params):
   
   vega = s_0 * np.exp(-q * T) * nd1 * np.sqrt(T)
 
-  term1 = -(s_0 * np.exp(-q * T) * nd1 * iv) / (2 * np.sqrt(T))
+  term1 = -(s_0 * np.exp(-q * T) * nd1 * sigma) / (2 * np.sqrt(T))
 
   disc_q = np.exp(-q * T)
   disc_r = np.exp(-r * T)
@@ -80,6 +80,6 @@ def bs_greeks(params):
     term3 = r * K * np.exp(-r * T) * norm.cdf(-d2)
     theta = term1 + term2 + term3
 
-  gamma = disc_q * nd1 / (s_0 * iv * np.sqrt(T))
+  gamma = disc_q * nd1 / (S_0 * sigma * np.sqrt(T))
 
   return float(delta), float(gamma), float(rho), float(theta), float(vega)
