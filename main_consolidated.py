@@ -113,7 +113,7 @@ def transform_input(file):
     except (ValueError, TypeError):
         raise ValueError("Interest rate has to be of type 'float' (x.x%)!")
     
-    if config["dividend"] == "None" or config["dividends"] is False:
+    if config["dividend"] == "None" or config["dividend"] is False:
         params["q"] = 0
     else: 
         try: 
@@ -127,7 +127,7 @@ def transform_input(file):
         raise ValueError("Number of simulations has to be of type 'int'!")
 
     try: 
-        params["nr_of_timesteps"] = int(config["time_step"])
+        params["nr_of_timesteps"] = int(config["nr_of_timesteps"])
     except (ValueError, TypeError):
         raise ValueError("Number of timesteps has to be of type 'int'!")
     
