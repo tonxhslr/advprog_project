@@ -251,18 +251,18 @@ def MonteCarlo(params):
     '''
 
     def simulation_run(params):
-    '''
-    One full pricing simulation for n timesteps. Takes a given start_price as well as the number of timesteps, and simulates
-    an asset's random price development (acc. to GBM) over the n timesteps. Returns an array of the format: [[timestep, price]]
-
-    Inputs:
-     - params: dictionary of parameters, from which the function takes
-        Number of timesteps nr_time: params["nr_of_timesteps"]
-        Start price start_price: params["s_0"]
-
-        + parameters for timestep function
-
-    '''
+        '''
+        One full pricing simulation for n timesteps. Takes a given start_price as well as the number of timesteps, and simulates
+        an asset's random price development (acc. to GBM) over the n timesteps. Returns an array of the format: [[timestep, price]]
+    
+        Inputs:
+         - params: dictionary of parameters, from which the function takes
+            Number of timesteps nr_time: params["nr_of_timesteps"]
+            Start price start_price: params["s_0"]
+    
+            + parameters for timestep function
+    
+        '''
 
         def timestep(params):
             '''
