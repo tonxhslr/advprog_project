@@ -528,7 +528,7 @@ def option_calculator(file):
     elif option_type == "asian" or option_type == "barrier" or option_type == "european" or option_type == "binary":
         option_price_mc = mc_pricing_basic(params)
 
-    elif (option_type =="american" and params["q"] != 0): 
+    elif (option_type == "american" and params["q"] != 0): 
         option_price_mc = mc_pricing_american(params) 
 
     delta, gamma, rho, theta, vega = bs_greeks(params)
