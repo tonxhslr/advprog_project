@@ -91,7 +91,7 @@ def transform_input(file):
     if params["exercise_type"] not in ("european", "american", "asian", "barrier", "binary"):
         raise ValueError("Exercise type must be 'european', 'american', 'asian', 'barrier' or 'binary'!")
       
-    params["expiration"] = calculate_expiration(config["start_date"], config["start_time"], config["expiration_date"], config["expiration_time"])
+    params["T"] = calculate_expiration(config["start_date"], config["start_time"], config["expiration_date"], config["expiration_time"])
 
     try:
         params["S_0"] = float(config["underlying_price"])
@@ -163,26 +163,33 @@ def transform_input(file):
 
 
 # 2) Black-Scholes: Analytical Solution for European or Binary Option Price, or American options without Dividends (Black-Scholes)
-def black_scholes(S_0, K, T, r, q, sigma, option_type='call', option_style='european', payout=1.0):
+def black_scholes(S_0, K, T, r, q, sigma, option_type='call', exercise_type='european', payout=1.0):
     """
     Analytical Solution for:
       - European call/put (with dividend yield q)
       - Binary cash-or-nothing call/put
-    Accepts 'american' in option_style, but returns the European value because
+    Accepts 'american' in exercise_type, but returns the European value because
     American options with dividends do not have a closed-form Black–Scholes price.
     """
     S_0 = params["S_0"]
-
+    K = params["K"]
+    T = params["T"]
+    r = params["r"]
+    q = params["q"]
+    sigma = params["iv"]
+    option_type = params["option_type"]
+    exercise_type = params["exercise_type"]
+    payout = params["binary_payout"]
     
     option_type = option_type.lower()
-    option_style = option_style.lower()
+    exercise_type = exercise_type.lower()
 
     if T <= 0 or sigma <= 0:
         disc_r = np.exp(-r * max(T, 0.0))
         disc_q = np.exp(-q * max(T, 0.0))
         itm = (S_0 >= K) if option_type == 'call' else (S_0 <= K)
 
-        if option_style == 'binary':
+        if exercise_type == 'binary':
             return payout * disc_r if itm else 0.0
         else:  # european / american fallback
             if option_type == 'call':
@@ -195,19 +202,19 @@ def black_scholes(S_0, K, T, r, q, sigma, option_type='call', option_style='euro
     disc_r = np.exp(-r * T)
     disc_q = np.exp(-q * T)
 
-    if option_style == 'european':
+    if exercise_type == 'european':
         if option_type == 'call':
             return S_0 * disc_q * norm.cdf(d1) - K * disc_r * norm.cdf(d2)
         elif option_type == 'put':
             return K * disc_r * norm.cdf(-d2) - S_0 * disc_q * norm.cdf(-d1)
 
-    elif option_style == 'binary':
+    elif exercise_type == 'binary':
         if option_type == 'call':
             return payout * disc_r * norm.cdf(d2)
         elif option_type == 'put':
             return payout * disc_r * norm.cdf(-d2)
 
-    elif option_style == 'american':
+    elif exercise_type == 'american':
         # price it as european here; true american (esp. with dividends)
         # should be done with a binomial / LSM outside this function
         if option_type == 'call':
@@ -218,7 +225,7 @@ def black_scholes(S_0, K, T, r, q, sigma, option_type='call', option_style='euro
             return euro_price
 
     else:
-        raise ValueError("option_style must be 'european', 'binary', or 'american'")
+        raise ValueError("exercise_type must be 'european', 'binary', or 'american'")
 
 
 
