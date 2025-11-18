@@ -500,3 +500,29 @@ def bs_greeks(params):
     gamma = disc_q * nd1 / (S_0 * sigma * np.sqrt(T))
     
     return float(delta), float(gamma), float(rho), float(theta), float(vega)
+
+
+def option_calculator(file):
+    '''
+    TBD
+    '''
+    
+    params = transform_input(file)
+    option_type = params["option_type"]
+    output_file = params["filename"]
+    
+    if option_type == "european" or option_type == "binary" or (option_type == "american" and params["q"] == 0):
+        option_price_analytical = black_scholes(params)
+
+    elif option_type == "asian" or option_type == "barrier" or option_type == "european" or option_type == "binary":
+        option_price_mc = mc_pricing_basic(params)
+
+    elif (option_type =="american" and params["q"] != 0): 
+        option_price_mc = mc_pricing_american(params) 
+
+    delta, gamma, rho, theta, vega = bs_greeks(params)
+
+    
+    
+
+
