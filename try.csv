@@ -8,8 +8,7 @@ option_strike,100
 underlying_price,100
 volatility,20
 interest_rate,5
-dividends,dividend
-dividend_amount,0.0
+dividend,0.0
 day_interval,0
 nr_simulations,10000
 time_step,1.0
