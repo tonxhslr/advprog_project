@@ -94,12 +94,12 @@ def transform_input(file):
     params["expiration"] = calculate_expiration(config["start_date"], config["start_time"], config["expiration_date"], config["expiration_time"])
 
     try:
-        params["s_0"] = float(config["underlying_price"])
+        params["S_0"] = float(config["underlying_price"])
     except (ValueError, TypeError):
         raise ValueError("Underlying price has to be of type 'float'!")
 
     try: 
-        params["k_0"] = float(config["option_strike"])
+        params["K"] = float(config["option_strike"])
     except (ValueError, TypeError):
         raise ValueError("Strike price has to be of type 'float'!")
 
@@ -171,6 +171,8 @@ def black_scholes(S_0, K, T, r, q, sigma, option_type='call', option_style='euro
     Accepts 'american' in option_style, but returns the European value because
     American options with dividends do not have a closed-form Black–Scholes price.
     """
+    S_0 = params["S_0"]
+
     
     option_type = option_type.lower()
     option_style = option_style.lower()
