@@ -142,7 +142,7 @@ def transform_input(file):
 
     # Currently, the program will overwrite files, but one could implement a check for existing files and prompt the user, whether he wants to overwrite the file
     
-    if config["option_type"].lower() == "barrier":
+    if config["exercise_type"].lower() == "barrier":
         params["barrier_type"] = config["barrier_type"]
         if not any(word in params["barrier_type"].lower() for word in ("in", "out")):
             raise ValueError("Barrier type must contain 'in' or 'out' (e.g. 'knock-in', 'knockout')!")   
@@ -151,7 +151,7 @@ def transform_input(file):
         except (ValueError, TypeError): 
             raise ValueError("Barrier threshold has to be type 'float'!")
 
-    if config["option_type"].lower() == "binary":
+    if config["exercise_type"].lower() == "binary":
         try: 
             params["threshold"] = float(config["threshold"])
         except (ValueError, TypeError): 
