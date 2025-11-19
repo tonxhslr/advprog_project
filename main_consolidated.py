@@ -286,14 +286,14 @@ def MonteCarlo(params):
             sigma = params["iv"]
             
             delta_t=T/nr_of_timesteps
-            return params["s_0"] * np.exp((r-q-0.5*sigma**2)*delta_t + sigma * np.sqrt(delta_t)*np.random.normal(0,1))
+            return S_0 * np.exp((r-q-0.5*sigma**2)*delta_t + sigma * np.sqrt(delta_t)*np.random.normal(0,1))
 
 # Simulation Run -----------------------------------------------------------------------------------------------------------------------
 
         nr_time = params["nr_of_timesteps"]
-        start_price = params["s_0"]
-        prices = [[0, start_price]]
-        S_i = start_price
+        S_0 = params["S_0"]
+        prices = [[0, S_0]]
+        S_i = S_0
         for i in range(nr_time):
             S_i = timestep(params)
             prices.append([i+1, S_i])
@@ -516,16 +516,16 @@ def option_calculator(file):
     '''
     
     params = transform_input(file)
-    option_type = params["option_type"]
+    exercise_type = params["exercise_type"]
     output_file = params["filename"]
 
     option_price_analytical = 0
     option_price_mc = 0
     
-    if option_type == "european" or option_type == "binary" or (option_type == "american" and params["q"] == 0):
+    if exercise_type == "european" or exercise_type == "binary" or (exercise_type == "american" and params["q"] == 0):
         option_price_analytical = black_scholes(params)
 
-    elif option_type == "asian" or option_type == "barrier" or option_type == "european" or option_type == "binary":
+    if exercise_type == "asian" or exercise_type == "barrier" or exercise_type == "european" or exercise_type == "binary":
         option_price_mc = mc_pricing_basic(params)
 
     elif (option_type == "american" and params["q"] != 0): 
