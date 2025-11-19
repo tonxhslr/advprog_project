@@ -285,8 +285,8 @@ def MonteCarlo(params):
             q = params["q"]
             sigma = params["iv"]
             
-            delta_t=exp/nr_time
-            return params["s_0"] * np.exp((r-q-0.5*iv**2)*delta_t + iv * np.sqrt(delta_t)*np.random.normal(0,1))
+            delta_t=T/nr_of_timesteps
+            return params["s_0"] * np.exp((r-q-0.5*sigma**2)*delta_t + sigma * np.sqrt(delta_t)*np.random.normal(0,1))
 
 # Simulation Run -----------------------------------------------------------------------------------------------------------------------
 
