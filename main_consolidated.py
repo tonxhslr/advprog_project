@@ -122,7 +122,7 @@ def transform_input(file):
             raise ValueError("Dividend has to be of type 'float'!")
 
     try: 
-        params["nr_of_simulations"] = int(config["nr_simulations"])
+        params["nr_of_simulations"] = int(config["nr_of_simulations"])
     except (ValueError, TypeError):
         raise ValueError("Number of simulations has to be of type 'int'!")
 
