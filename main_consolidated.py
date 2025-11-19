@@ -557,6 +557,8 @@ def option_calculator(file):
                 json.dump(output, f, indent=4)
         else:
             raise ValueError(f"Unsupported file extension: {suffix}")
+    # Do we need this else statement if it's returning output anyway??? Since we're returning output it's always printing 
+    #everything regardless of if there's the output file or no, but im actually not sure if it's better to do it just in case or delete because redundant ~ Ania
     else: 
         print("Option Price (Analytical (BS)):", option_price_analytical)
         print("Option Price (Numerical (MC)):", option_price_mc)
