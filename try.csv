@@ -10,7 +10,7 @@ volatility,20
 interest_rate,5
 dividend,0.0
 day_interval,0
-nr_simulations,10000
-time_step,1.0
+nr_of_simulations,10000
+nr_of_timesteps,1.0
 output_to_file,True
 output_filename,results.csv
