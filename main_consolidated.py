@@ -550,8 +550,8 @@ def option_calculator(file):
         if suffix == ".csv":
             with open(output_file, "w", newline="") as f:
                 writer = csv.writer(f)
-                writer.writerow(output.keys())
-                writer.writerow(output.values())
+                for key, value in output.items():
+                    writer.writerow([key, value])
         elif suffix == ".json":
             with open(output_file, "w") as f:
                 json.dump(output, f, indent=4)
@@ -567,8 +567,10 @@ def option_calculator(file):
         print("Vega:", vega)
 
     return output
-        
-        
+
+# To run the code:
+filename_csv = os.path.join(os.getcwd(),'try.csv')
+print(option_calculator(filename_csv))        
         
 
 
