@@ -237,7 +237,7 @@ making it easier to combine, extend, and reuse different pricing approaches with
 '''
 
 
-def MonteCarlo(params):
+def monte_carlo(params):
     '''
     Monte-Carlo simulation for an Asset's price development, given a start_price, the assets volatility, current interest rate, dividend yield, expiration
     the number of timesteps per simulation and the total number of simulations. Simulates M different price developments with n timesteps each. 
@@ -442,7 +442,7 @@ def mc_pricing_basic(params):
     r = params["r"]
     T = params["T"]
 
-    paths=MonteCarlo(params)
+    paths=monte_carlo(params)
 
     payoff_functions = {
         "european" : payoff_european,
