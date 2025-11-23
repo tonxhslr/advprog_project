@@ -425,7 +425,6 @@ def payoff_barrier(path, params):
 def mc_pricing_basic(params):
     """
     Monte Carlo pricing function.
-    
     Generates simulated price paths, computes payoffs using the appropriate payoff function, and returns the discounted mean 
     as the theoretical option price. Uses the full 'params' dictionary for a consistent interface across pricing methods.
     
