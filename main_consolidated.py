@@ -272,7 +272,7 @@ def monte_carlo(params: dict) -> np.array:
             and transforms it into a random price (acc. to GBM) after the timestep.
             
             Inputs:
-            - S_prev: previous price
+            - start_price: previous price
              - params: dictionary of parameters, from which the function takes
                 Expiration (T): params["T"]
                 Number of timesteps (nr_of_timesteps): params["nr_of_timesteps"]
