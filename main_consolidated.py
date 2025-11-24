@@ -183,8 +183,8 @@ def black_scholes(params: dict) -> float:
     r = params["r"]
     q = params["q"]
     sigma = params["iv"]
-    option_type = params.get("option_type", 'call')
-    exercise_type = params.get("exercise_type", 'european')
+    option_type = params["option_type"]
+    exercise_type = params["exercise_type"]
     payout = params.get("binary_payout", None)
 
     if T <= 0 or sigma <= 0:
