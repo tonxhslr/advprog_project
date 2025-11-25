@@ -1,0 +1,18 @@
+option_type,call
+exercise_type,binary
+start_date,2025-10-25
+start_time,09:30
+expiration_date,2026-01-25
+expiration_time,AM
+option_strike,100
+underlying_price,90
+volatility,20
+interest_rate,5
+dividend,0
+barrier_type, None
+threshold, 0.0
+binary_payout, 10.0
+nr_of_simulations,10000
+nr_of_timesteps,100
+output_to_file,False 
+output_filename,None
