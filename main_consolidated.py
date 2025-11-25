@@ -183,9 +183,9 @@ def black_scholes(params: dict) -> float:
     r = params["r"]
     q = params["q"]
     sigma = params["iv"]
-    option_type = params.get("option_type", 'call')
-    exercise_type = params.get("exercise_type", 'european')
-    payout = params.get("binary_payout", None)
+    option_type = params["option_type"]
+    exercise_type = params["exercise_type"]
+    payout = params["binary_payout"]
 
     if T <= 0 or sigma <= 0:
         disc_r = np.exp(-r * max(T, 0.0))
