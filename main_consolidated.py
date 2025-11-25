@@ -154,7 +154,7 @@ def transform_input(file):
         except (ValueError, TypeError): 
             raise ValueError("Barrier threshold has to be type 'float'!")
 
-    if config["option_type"].lower() == "binary":
+    if config["exercise_type"].lower() == "binary":
         try: 
             params["threshold"] = float(config["threshold"] or 100)
         except (ValueError, TypeError): 
