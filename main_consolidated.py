@@ -7,7 +7,7 @@ import csv
 import os
 from datetime import date, datetime
 
-np.random.seed(42)  # For reproducibility during testing
+#np.random.seed(42)  # For reproducibility during testing
 
 # Reading / Transforming Inputs from File
 def read_input_file(filepath):
@@ -154,7 +154,7 @@ def transform_input(file):
         except (ValueError, TypeError): 
             raise ValueError("Barrier threshold has to be type 'float'!")
 
-    if config["exercise_type"].lower() == "binary":
+    if config["option_type"].lower() == "binary":
         try: 
             params["threshold"] = float(config["threshold"] or 100)
         except (ValueError, TypeError): 
@@ -183,8 +183,8 @@ def black_scholes(params: dict) -> float:
     r = params["r"]
     q = params["q"]
     sigma = params["iv"]
-    option_type = params["option_type"]
-    exercise_type = params["exercise_type"]
+    option_type = params.get("option_type", 'call')
+    exercise_type = params.get("exercise_type", 'european')
     payout = params.get("binary_payout", None)
 
     if T <= 0 or sigma <= 0:
@@ -272,7 +272,7 @@ def monte_carlo(params: dict) -> np.array:
             and transforms it into a random price (acc. to GBM) after the timestep.
             
             Inputs:
-            - start_price: previous price
+            - S_prev: previous price
              - params: dictionary of parameters, from which the function takes
                 Expiration (T): params["T"]
                 Number of timesteps (nr_of_timesteps): params["nr_of_timesteps"]
@@ -490,11 +490,50 @@ def longstaff_schwartz_pricing_american(params: dict) -> float:
             raise ValueError("Option Type has to be 'call' or 'put'")
         
         return payoffs
+    
+    def laguerre_basis(S, K, clip_max=1e6):
+        """
+        Return the Longstaff-Schwartz Laguerre basis: [1, L1(x), L2(x), L3(x)]
+        evaluated at x = S / K, where S is a 1-D array of spot prices.
+
+        Uses the standard Laguerre polynomials:
+        L0(x) = 1
+        L1(x) = 1 - x
+        L2(x) = 1 - 2x + x^2 / 2
+        L3(x) = 1 - 3x + 3/2 x^2 - 1/6 x^3
+
+        Parameters
+        ----------
+        S : array_like, shape (n_paths,)
+            Underlying prices at a given time t for each simulated path.
+        K : float
+            Strike price. If K == 0, we fall back to using S (avoids div-by-zero).
+        clip_max : float, optional
+            Maximum value for x = S/K to avoid extreme polynomial values (stability).
+        """
+        S = np.asarray(S, dtype=float)
+
+        # avoid division by zero; if K is 0 use S directly (rare/unrealistic for options)
+        if K == 0 or K is None:
+            x = S.copy()
+        else:
+            x = S / float(K)
+
+        # numerical safety: clip very large x to avoid overflow / huge polynomial values
+        x = np.clip(x, 0.0, clip_max)
+
+        L1 = 1.0 - x
+        L2 = 1.0 - 2.0 * x + 0.5 * x**2
+        L3 = 1.0 - 3.0 * x + 1.5 * x**2 - (1.0/6.0) * x**3
+
+        # Return design matrix with columns [1, L1, L2, L3]
+        return np.column_stack((np.ones_like(x), L1, L2, L3))
 
 # Longstaff-Schwartz -----------------------------------------------------------------------------------
 
     r = params["r"]
     T = params["T"]
+    K = params["K"]
     nr_of_timesteps = params["nr_of_timesteps"]
     discount_step = np.exp(-r * T/nr_of_timesteps)
 
@@ -505,20 +544,20 @@ def longstaff_schwartz_pricing_american(params: dict) -> float:
     cashflow = payoffs[:,-1].copy()
 
     # basic function factories
-    def basis_funcs(S):
+    def basis_funcs(S, K):
         """
         Return the polynomial basis [1, S, S^2] evaluated at the price vector S.
         S is expected to be a 1-D array with one entry per path.
         """
         S = np.asarray(S)
-        return np.column_stack((np.ones_like(S), S, S**2))
+        return laguerre_basis(S, K)
 
     # backward recursion
     for t in range(nr_of_timesteps-1, -1, -1):
 
         Y = cashflow * discount_step
         S_t = paths[:, t, 1]  # use the simulated underlying price (column 1), not the step index
-        X = basis_funcs(S_t)
+        X = basis_funcs(S_t, K)
 
         itm = (payoffs[:, t] > 0.0)     # array with 1's, where the option is In-The-Money (itm) and 0's elsewhere
 
@@ -541,6 +580,7 @@ def longstaff_schwartz_pricing_american(params: dict) -> float:
 
         # Estimate the continuation value of the option, using the calculated regression coefficient beta
         continuation_value = X.dot(beta)
+        continuation_value = np.maximum(continuation_value, 0.0)
         continuation_value[~itm] = np.inf       # Prevent early exercise of OTM paths by setting the continuation value against infinity
 
         # Exercise decision: exercise if immediate payoff is strictly greater than estimated continuation value
@@ -556,9 +596,11 @@ def longstaff_schwartz_pricing_american(params: dict) -> float:
     return price
 
 
+
+
 # 4) Greeks
 
-def bs_greeks(params):
+def bs_greeks(params: dict) -> tuple[float, ...]:
   
     option_type = params["option_type"]
     S_0 = params["S_0"]
@@ -683,17 +725,30 @@ def option_calculator(file):
         else:
             raise ValueError(f"Unsupported file extension: {suffix}")
     else:
-        print("Exercise type:", exercise_type)
-        print("Option type:", option_type)
+        print("Exercise type                    :", exercise_type)
+        print("Option type                      :", option_type)
         print("Option Price (Analytical (BS/EU)):", option_price_analytical)
-        print("Option Price (Numerical (MC)):", option_price_mc)
-        print("Delta:", delta)
-        print("Gamma:", gamma)
-        print("Rho:", rho)
-        print("Theta:", theta)
-        print("Vega:", vega)
+        print("Option Price (Numerical (MC))    :", option_price_mc)
+        print("Delta                            :", delta)
+        print("Gamma                            :", gamma)
+        print("Rho                              :", rho)
+        print("Theta                            :", theta)
+        print("Vega                             :", vega)
 
     return output
 
-filename_csv = os.path.join(os.getcwd(),'try.csv')
-print(option_calculator(filename_csv))
+# 6) Testing ---------------------------------------------------------------------------------------------------------------------------------------
+
+european_call = os.path.join(os.getcwd(),'Group Project', 'european_call.csv')
+european_put = os.path.join(os.getcwd(),'Group Project', 'european_put.csv')
+european_put_dividend = os.path.join(os.getcwd(),'Group Project', 'european_put_dividend.csv')
+american_call = os.path.join(os.getcwd(),'Group Project', 'american_call.csv')
+american_put = os.path.join(os.getcwd(),'Group Project', 'american_put.csv')
+american_put_dividend = os.path.join(os.getcwd(),'Group Project', 'american_put_dividend.csv')
+asian_put = os.path.join(os.getcwd(),'Group Project', 'asian_put.csv')
+binary_call = os.path.join(os.getcwd(),'Group Project', 'binary_call.csv')
+knockin_call = os.path.join(os.getcwd(),'Group Project', 'knockin_call.csv')
+knockout_put = os.path.join(os.getcwd(),'Group Project', 'knockout_put.csv')
+
+print(option_calculator(european_call))
+print(option_calculator(american_call))
